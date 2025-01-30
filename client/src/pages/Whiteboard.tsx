@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { Stage, Layer, Rect, Text } from "react-konva";
+import { Stage, Layer, Rect, Text, Circle } from "react-konva";
 import { io, Socket } from "socket.io-client";
 
 interface Shape {
@@ -104,7 +104,20 @@ const Whiteboard = () => {
         board_code: boardCode,
         shape_type: "rectangle",
         color: selectedColor,
-        data: { x1: 200, y1: 200, x2: 300, y2: 250 },
+        data: { x1: 200, y1: 200, x2: 250, y2: 250 },
+      });
+    } catch (error) {
+      console.log("Error adding shape:", error);
+    }
+  };
+  const addCircle = async () => {
+    try {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/add_shape`, {
+        user_id: sessionStorage.getItem("user_id"),
+        board_code: boardCode,
+        shape_type: "circle",
+        color: selectedColor,
+        data: { x1: 200, y1: 200, x2: 250, y2: 250 },
       });
     } catch (error) {
       console.log("Error adding shape:", error);
@@ -130,7 +143,7 @@ const Whiteboard = () => {
     const updatedData: ShapeData = {
       x1: e.target.x(),
       y1: e.target.y(),
-      x2: e.target.x() + 100,
+      x2: e.target.x() + 50,
       y2: e.target.y() + 50,
     };
 
@@ -175,34 +188,67 @@ const Whiteboard = () => {
         >
           Add Rectangle
         </button>
+        <button
+          onClick={addCircle}
+          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 shadow-md"
+        >
+          Add Circle
+        </button>
       </div>
 
       {/* Canvas */}
       <div className="border border-primary-500 bg-white rounded-lg shadow-lg p-4">
         <Stage width={600} height={500} className="border bg-white">
           <Layer>
-            {shapes.map((shape) => (
-              <Rect
-                key={shape._id}
-                x={shape.data.x1}
-                y={shape.data.y1}
-                width={shape.data.x2 - shape.data.x1}
-                height={shape.data.y2 - shape.data.y1}
-                fill={shape.color}
-                draggable
-                shadowBlur={5}
-                onDragEnd={(e) => handleDragEnd(shape._id, e)}
-                onMouseOver={(e) => {
-                  setHoveredShape({
-                    id: shape._id,
-                    x: e.target.x(),
-                    y: e.target.y() - 20,
-                  });
-                  handleMouseOver(shape._id)
-                }}
-                onMouseLeave={() => setHoveredShape(null)}
-              />
-            ))}
+            {shapes.map((shape) => {
+              if(shape.shape_type === "rectangle"){
+                return (
+                  <Rect
+                    key={shape._id}
+                    x={shape.data.x1}
+                    y={shape.data.y1}
+                    width={shape.data.x2 - shape.data.x1}
+                    height={shape.data.y2 - shape.data.y1}
+                    fill={shape.color}
+                    draggable
+                    shadowBlur={5}
+                    onDragEnd={(e) => handleDragEnd(shape._id, e)}
+                    onMouseOver={(e) => {
+                      setHoveredShape({
+                        id: shape._id,
+                        x: e.target.x(),
+                        y: e.target.y() - 20,
+                      });
+                      handleMouseOver(shape._id)
+                    }}
+                    onMouseLeave={() => setHoveredShape(null)}
+                  />
+                )
+              }
+              else if(shape.shape_type === "circle"){
+                return (
+                  <Circle
+                    key={shape._id}
+                    x={shape.data.x1}
+                    y={shape.data.y1}
+                    radius={25}
+                    fill={shape.color}
+                    draggable
+                    shadowBlur={5}
+                    onDragEnd={(e) => handleDragEnd(shape._id, e)}
+                    onMouseOver={(e) => {
+                      setHoveredShape({
+                        id: shape._id,
+                        x: e.target.x(),
+                        y: e.target.y() - 20,
+                      });
+                      handleMouseOver(shape._id)
+                    }}
+                    onMouseLeave={() => setHoveredShape(null)}
+                  />
+                )
+              }
+            })}
 
             {/* Show tooltip if hovering */}
             {username && hoveredShape && (
