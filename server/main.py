@@ -1,10 +1,10 @@
 # server.py
-from flask_socketio import join_room
 from flask import Flask, jsonify, request
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room
 from pymongo import MongoClient, ASCENDING
 from flask_cors import CORS
 from datetime import datetime
+from bson.objectid import ObjectId
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "some_random_secret_key"
@@ -28,12 +28,11 @@ shapes_collection.create_index([("whiteboard_id", ASCENDING)])
 shapes_collection.create_index([("user_id", ASCENDING)])
 shapes_collection.create_index([("z", ASCENDING)])
 
-# Testing stage
+# Testing purpose
 @app.route("/ping", methods=["GET"])
 def ping():
     print("Client pinged")
     return jsonify({"message": "pong"}), 200
-
 
 @socketio.on("pingEvent")
 def handle_ping_event(data):
@@ -41,8 +40,6 @@ def handle_ping_event(data):
     emit("pongEvent", {"message": "pong from server"}, broadcast=True)
 
 # Auth Register
-
-
 @app.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
@@ -142,8 +139,6 @@ def join_whiteboard(board_code):
     return jsonify({"whiteboard": whiteboard}), 200
 
 # Many Shapes form a Whiteboard
-
-
 @app.route("/whiteboards/<board_code>/shapes", methods=["GET"])
 def get_shapes(board_code):
     whiteboard = whiteboards_collection.find_one({"board_code": board_code})
@@ -157,8 +152,6 @@ def get_shapes(board_code):
     return jsonify({"shapes": shapes}), 200
 
 # Create/Insert new shape
-
-
 @app.route("/add_shape", methods=["POST"])
 def add_shape():
     data = request.json
@@ -195,26 +188,19 @@ def add_shape():
         return jsonify({"message": "bruh"}), 500
 
 
-# # Update Shape Position
-# @app.route("/update_shape", methods=["POST"])
-# def update_shape():
-#     data = request.json
-#     shape_id = data.get("_id")
-#     new_data = data.get("data")
+# Update Shape Position
+@app.route("/update_shape", methods=["PATCH"])
+def update_shape_api():
+    data = request.json
+    shape_id = data.get("_id")
+    new_data = data.get("data")
 
-#     if not shape_id or not new_data:
-#         return jsonify({"message": "Missing shape ID or data"}), 400
+    if not shape_id or not new_data:
+        return jsonify({"message": "Missing shape ID or data"}), 400
+    res = shapes_collection.update_one(
+        {"_id": ObjectId(shape_id)}, {"$set": {"data": new_data}})
 
-#     shapes_collection.update_one(
-#         {"_id": shape_id}, {"$set": {"data": new_data}})
-
-#     # Fetch updated shape and broadcast update
-#     updated_shape = shapes_collection.find_one({"_id": shape_id})
-#     updated_shape["_id"] = str(updated_shape["_id"])
-
-#     emit("shape_updated", updated_shape, broadcast=True)
-
-#     return jsonify({"message": "Shape updated"}), 200
+    return jsonify({"message": "Shape updates are stored in mongodb"}), 200
 
 
 # Socket.io essentials
@@ -224,10 +210,18 @@ def handle_join_room(data):
     whiteboard_id = data.get("whiteboard_id")
     if whiteboard_id:
         join_room(whiteboard_id)
-        emit("join_room_response", {"message": f"Joined room {whiteboard_id}."})
+        emit("join_room_response", {
+             "message": f"Joined room {whiteboard_id}."})
     else:
-        emit("join_room_response", {"message": "Whiteboard ID is required to join a room."})
+        emit("join_room_response", {
+             "message": "Whiteboard ID is required to join a room."})
 
+@socketio.on("update_shape")
+def update_shape_socket(data):
+    try:
+        socketio.emit("update_shape_response", data, to=data["board_code"])
+    except:
+        print("Error on updating shape")
 
 @socketio.on("disconnect")
 def handle_disconnect():
