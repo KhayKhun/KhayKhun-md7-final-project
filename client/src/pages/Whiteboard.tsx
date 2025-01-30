@@ -1,22 +1,22 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { Stage, Layer, Rect } from "react-konva";
+import { Stage, Layer, Rect, Text } from "react-konva";
 import { io, Socket } from "socket.io-client";
 
 interface Shape {
   _id: string;
   shape_type: string;
-  user_id:string;
+  user_id: string;
   color: string;
-  data : ShapeData
+  data: ShapeData;
 }
 
 interface ShapeData {
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
 }
 
 const Whiteboard = () => {
@@ -24,10 +24,27 @@ const Whiteboard = () => {
   const [whiteboard, setWhiteboard] = useState<any>(null);
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [selectedColor, setSelectedColor] = useState("#FF0000");
-
+  const [username, setUsername] = useState("");
+  const [hoveredShape, setHoveredShape] = useState<{
+    id: string;
+    x: number;
+    y: number;
+  } | null>(null);
   // Use useRef to persist socket connection
   const socketRef = useRef<Socket | null>(null);
 
+  async function handleMouseOver(shapeId : string){
+    try{
+      const userRes = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/get_username/${shapeId}`
+      );
+      console.log(userRes)
+      setUsername(userRes.data.username)
+    }catch{
+      setUsername("")
+    }
+
+  }
   async function fetchData() {
     try {
       const boardRes = await axios.get(
@@ -39,11 +56,11 @@ const Whiteboard = () => {
         `${import.meta.env.VITE_BACKEND_URL}/whiteboards/${boardCode}/shapes`
       );
       setShapes(shapesRes.data.shapes);
+
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   }
-
   useEffect(() => {
     if (!socketRef.current) {
       socketRef.current = io(import.meta.env.VITE_BACKEND_URL);
@@ -61,7 +78,9 @@ const Whiteboard = () => {
       socketRef.current.on("update_shape_response", (data) => {
         setShapes((prevShapes) =>
           prevShapes.map((shape) =>
-            shape._id === data.shape.shapeId ? { ...shape, data: data.shape.data } : shape
+            shape._id === data.shape.shapeId
+              ? { ...shape, data: data.shape.data }
+              : shape
           )
         );
       });
@@ -81,7 +100,7 @@ const Whiteboard = () => {
   const addRectangle = async () => {
     try {
       await axios.post(`${import.meta.env.VITE_BACKEND_URL}/add_shape`, {
-        user_id: localStorage.getItem("user_id"),
+        user_id: sessionStorage.getItem("user_id"),
         board_code: boardCode,
         shape_type: "rectangle",
         color: selectedColor,
@@ -92,36 +111,37 @@ const Whiteboard = () => {
     }
   };
 
-  const updateSingleShape = async (shapeId : string, data : ShapeData) => {
+  const updateSingleShape = async (shapeId: string, data: ShapeData) => {
     try {
-      const resp = await axios.patch(`${import.meta.env.VITE_BACKEND_URL}/update_shape`, {
+      await axios.patch(`${import.meta.env.VITE_BACKEND_URL}/update_shape`, {
         _id: shapeId,
         data,
       });
-      console.log(resp.data.message)
     } catch (error) {
       console.log("Error adding shape:", error);
     }
   };
 
   const handleDragEnd = async (shapeId: string, e: any) => {
-    console.log(`Dragging shape ${shapeId} to (${e.target.x()}, ${e.target.y()})`);
-  
+    // console.log(
+    //   `Dragging shape ${shapeId} to (${e.target.x()}, ${e.target.y()})`
+    // );
+
     const updatedData: ShapeData = {
       x1: e.target.x(),
       y1: e.target.y(),
       x2: e.target.x() + 100,
       y2: e.target.y() + 50,
     };
-  
+
     setShapes((prevShapes) =>
       prevShapes.map((shape) =>
         shape._id === shapeId ? { ...shape, data: updatedData } : shape
       )
     );
-  
+
     await updateSingleShape(shapeId, updatedData);
-  
+
     if (socketRef.current) {
       socketRef.current.emit("update_shape", {
         board_code: boardCode,
@@ -132,10 +152,12 @@ const Whiteboard = () => {
 
   return (
     <div className="p-6 bg-neutral-50 min-h-screen flex flex-col items-center">
-      <h2 className="text-3xl font-bold text-primary-600 mb-4">Whiteboard: {boardCode}</h2>
+      <h2 className="text-3xl font-bold text-primary-600 mb-4">
+        Whiteboard: {boardCode}
+      </h2>
       {whiteboard && (
         <p className="mb-4 text-neutral-500 text-sm">
-          Owner: {whiteboard.owner_id} | Created: {" "}
+          Owner: {whiteboard.owner_id} | Created:{" "}
           {new Date(whiteboard.created_at).toLocaleString()}
         </p>
       )}
@@ -157,7 +179,7 @@ const Whiteboard = () => {
 
       {/* Canvas */}
       <div className="border border-primary-500 bg-white rounded-lg shadow-lg p-4">
-        <Stage width={300} height={300} className="rounded-lg">
+        <Stage width={600} height={500} className="border bg-white">
           <Layer>
             {shapes.map((shape) => (
               <Rect
@@ -170,11 +192,35 @@ const Whiteboard = () => {
                 draggable
                 shadowBlur={5}
                 onDragEnd={(e) => handleDragEnd(shape._id, e)}
+                onMouseOver={(e) => {
+                  setHoveredShape({
+                    id: shape._id,
+                    x: e.target.x(),
+                    y: e.target.y() - 20,
+                  });
+                  handleMouseOver(shape._id)
+                }}
+                onMouseLeave={() => setHoveredShape(null)}
               />
             ))}
+
+            {/* Show tooltip if hovering */}
+            {username && hoveredShape && (
+              <Text
+                text={username}
+                fontSize={14}
+                fill="black"
+                x={hoveredShape.x}
+                y={hoveredShape.y}
+                padding={5}
+                align="center"
+                verticalAlign="middle"
+              />
+            )}
           </Layer>
         </Stage>
       </div>
+
     </div>
   );
 };

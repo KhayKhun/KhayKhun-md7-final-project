@@ -123,6 +123,19 @@ def create_whiteboard():
             print("Exception in GET /whiteboards:", e)
             return jsonify({"message": "Failed to retrieve whiteboards."}), 500
 
+@app.route("/get_username/<shape_id>", methods=["GET"])
+def get_username(shape_id):
+    try:
+        shape = shapes_collection.find_one(
+            {"_id": ObjectId(shape_id)})
+        user_id = shape["user_id"]
+
+        user = users_collection.find_one(
+            {"_id": ObjectId(user_id)})        
+        return jsonify({"username" : user["username"]}), 200
+    except:
+        return jsonify({"username" : ""}), 400
+
 
 # Single Whiteboard
 @app.route("/whiteboards/<board_code>", methods=["GET"])

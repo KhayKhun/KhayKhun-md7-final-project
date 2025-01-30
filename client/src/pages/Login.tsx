@@ -14,7 +14,7 @@ function Login() {
         username,
         password,
       });
-      localStorage.setItem("user_id", res.data.user_id);
+      sessionStorage.setItem("user_id", res.data.user_id);
       setMessage(res.data.message);
       setTimeout(() => navigate("/dashboard"), 2000);
     } catch (err: any) {
