@@ -30,20 +30,32 @@ const Whiteboard = () => {
     x: number;
     y: number;
   } | null>(null);
-  // Use useRef to persist socket connection
   const socketRef = useRef<Socket | null>(null);
+  const stageRef = useRef<any>(null);
 
-  async function handleMouseOver(shapeId : string){
-    try{
+  const handleDownload = () => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const dataURL = stage.toDataURL({ pixelRatio: 2 });
+    const link = document.createElement("a");
+    link.href = dataURL;
+    link.download = `whiteboard_${boardCode}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  async function handleMouseOver(shapeId: string) {
+    try {
       const userRes = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/get_username/${shapeId}`
       );
-      console.log(userRes)
-      setUsername(userRes.data.username)
-    }catch{
-      setUsername("")
+      console.log(userRes);
+      setUsername(userRes.data.username);
+    } catch {
+      setUsername("");
     }
-
   }
   async function fetchData() {
     try {
@@ -56,7 +68,6 @@ const Whiteboard = () => {
         `${import.meta.env.VITE_BACKEND_URL}/whiteboards/${boardCode}/shapes`
       );
       setShapes(shapesRes.data.shapes);
-
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -198,10 +209,15 @@ const Whiteboard = () => {
 
       {/* Canvas */}
       <div className="border border-primary-500 bg-white rounded-lg shadow-lg p-4">
-        <Stage width={600} height={500} className="border bg-white">
+        <Stage
+          ref={stageRef}
+          width={600}
+          height={500}
+          className="border bg-white"
+        >
           <Layer>
             {shapes.map((shape) => {
-              if(shape.shape_type === "rectangle"){
+              if (shape.shape_type === "rectangle") {
                 return (
                   <Rect
                     key={shape._id}
@@ -219,13 +235,12 @@ const Whiteboard = () => {
                         x: e.target.x(),
                         y: e.target.y() - 20,
                       });
-                      handleMouseOver(shape._id)
+                      handleMouseOver(shape._id);
                     }}
                     onMouseLeave={() => setHoveredShape(null)}
                   />
-                )
-              }
-              else if(shape.shape_type === "circle"){
+                );
+              } else if (shape.shape_type === "circle") {
                 return (
                   <Circle
                     key={shape._id}
@@ -242,11 +257,11 @@ const Whiteboard = () => {
                         x: e.target.x(),
                         y: e.target.y() - 20,
                       });
-                      handleMouseOver(shape._id)
+                      handleMouseOver(shape._id);
                     }}
                     onMouseLeave={() => setHoveredShape(null)}
                   />
-                )
+                );
               }
             })}
 
@@ -266,7 +281,12 @@ const Whiteboard = () => {
           </Layer>
         </Stage>
       </div>
-
+      <button
+        onClick={handleDownload}
+        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow-md"
+      >
+        Download Whiteboard
+      </button>
     </div>
   );
 };
