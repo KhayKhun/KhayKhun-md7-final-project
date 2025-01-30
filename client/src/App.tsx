@@ -14,10 +14,10 @@ function App() {
         {/* Routes Without Layout */}
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Home />} />
 
         {/* Routes With Layout */}
         <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/whiteboard/:boardCode" element={<Whiteboard />} />
           <Route path="/test" element={<Test />} />

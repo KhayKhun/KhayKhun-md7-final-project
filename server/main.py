@@ -5,6 +5,7 @@ from pymongo import MongoClient, ASCENDING
 from flask_cors import CORS
 from datetime import datetime
 from bson.objectid import ObjectId
+import bcrypt
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "some_random_secret_key"
@@ -52,7 +53,8 @@ def register():
     if users_collection.find_one({"username": username}):
         return jsonify({"message": "Username already exists."}), 409
 
-    password_hash = password
+    # Hash the password
+    password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
     user_id = users_collection.insert_one({
         "username": username,
@@ -62,10 +64,8 @@ def register():
 
     return jsonify({"message": "User registered successfully.", "user_id": str(user_id)}), 201
 
-
 @app.route("/login", methods=["POST"])
 def login():
-
     data = request.get_json()
     print("data:", data)
     username = data.get("username")
@@ -73,12 +73,16 @@ def login():
 
     if not username or not password:
         return jsonify({"message": "Username and password are required."}), 400
+
     user = users_collection.find_one({"username": username})
-    if not user or user["password_hash"] != password:
+    if not user:
+        return jsonify({"message": "Invalid username or password."}), 401
+
+    # Verify the password
+    if not bcrypt.checkpw(password.encode('utf-8'), user["password_hash"]):
         return jsonify({"message": "Invalid username or password."}), 401
 
     return jsonify({"message": "Login successful.", "user_id": str(user["_id"])}), 200
-
 
 # Many whiteboards / Create new whiteboard
 @app.route("/whiteboards", methods=["POST", "GET"])

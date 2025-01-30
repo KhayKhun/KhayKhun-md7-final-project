@@ -72,6 +72,7 @@ const Whiteboard = () => {
       setShapes(shapesRes.data.shapes);
     } catch (error) {
       console.error("Error fetching data:", error);
+      navigate("/")
     }
   }
   useEffect(() => {
@@ -208,7 +209,7 @@ const Whiteboard = () => {
           onClick={addRectangle}
           className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 shadow-md hover:shadow-lg transition-all flex items-center"
         >
-          <FaSquare className="mr-2" /> Add Rectangle
+          <FaSquare className="mr-2" /> Add Square
         </button>
         <button
           onClick={addCircle}
