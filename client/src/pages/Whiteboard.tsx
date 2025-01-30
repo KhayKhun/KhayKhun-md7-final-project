@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { Stage, Layer, Rect, Text, Circle } from "react-konva";
 import { io, Socket } from "socket.io-client";
+import { FaSquare, FaCircle, FaDownload } from "react-icons/fa"; // Importing icons
 
 interface Shape {
   _id: string;
@@ -20,6 +21,7 @@ interface ShapeData {
 }
 
 const Whiteboard = () => {
+  const navigate = useNavigate()
   const { boardCode } = useParams();
   const [whiteboard, setWhiteboard] = useState<any>(null);
   const [shapes, setShapes] = useState<Shape[]>([]);
@@ -72,6 +74,13 @@ const Whiteboard = () => {
       console.error("Error fetching data:", error);
     }
   }
+  useEffect(() => {
+    const storedId = sessionStorage.getItem("user_id")
+    if(!storedId){
+      navigate("/")
+    }
+  });
+
   useEffect(() => {
     if (!socketRef.current) {
       socketRef.current = io(import.meta.env.VITE_BACKEND_URL);
@@ -176,44 +185,46 @@ const Whiteboard = () => {
 
   return (
     <div className="p-6 bg-neutral-50 min-h-screen flex flex-col items-center">
+      {/* Header */}
       <h2 className="text-3xl font-bold text-primary-600 mb-4">
         Whiteboard: {boardCode}
       </h2>
       {whiteboard && (
-        <p className="mb-4 text-neutral-500 text-sm">
+        <p className="mb-6 text-neutral-500 text-sm">
           Owner: {whiteboard.owner_id} | Created:{" "}
           {new Date(whiteboard.created_at).toLocaleString()}
         </p>
       )}
 
-      <div className="flex space-x-4 mb-4">
+      {/* Controls */}
+      <div className="flex space-x-4 mb-6">
         <input
           type="color"
           value={selectedColor}
           onChange={(e) => setSelectedColor(e.target.value)}
-          className="w-12 h-12 border rounded-lg cursor-pointer shadow-md"
+          className="w-12 h-12 border-2 border-primary-500 rounded-lg cursor-pointer shadow-md hover:shadow-lg transition-shadow"
         />
         <button
           onClick={addRectangle}
-          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 shadow-md"
+          className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 shadow-md hover:shadow-lg transition-all flex items-center"
         >
-          Add Rectangle
+          <FaSquare className="mr-2" /> Add Rectangle
         </button>
         <button
           onClick={addCircle}
-          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 shadow-md"
+          className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 shadow-md hover:shadow-lg transition-all flex items-center"
         >
-          Add Circle
+          <FaCircle className="mr-2" /> Add Circle
         </button>
       </div>
 
       {/* Canvas */}
-      <div className="border border-primary-500 bg-white rounded-lg shadow-lg p-4">
+      <div className="border-2 border-primary-500 bg-white rounded-lg shadow-xl p-6 mb-6">
         <Stage
           ref={stageRef}
-          width={600}
-          height={500}
-          className="border bg-white"
+          width={800}
+          height={600}
+          className="border bg-white rounded-lg"
         >
           <Layer>
             {shapes.map((shape) => {
@@ -281,11 +292,13 @@ const Whiteboard = () => {
           </Layer>
         </Stage>
       </div>
+
+      {/* Download Button */}
       <button
         onClick={handleDownload}
-        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow-md"
+        className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow-md hover:shadow-lg transition-all flex items-center"
       >
-        Download Whiteboard
+        <FaDownload className="mr-2" /> Download Whiteboard
       </button>
     </div>
   );
