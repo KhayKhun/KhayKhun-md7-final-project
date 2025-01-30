@@ -1,1 +1,30 @@
+/* index.css */
 @import "tailwindcss";
+
+@theme {
+  /* Define Primary Colors */
+  --color-primary-50: #f0efff;
+  --color-primary-100: #e1dff3;
+  --color-primary-300: #cac6eb;
+  --color-primary-400: #938ae5;
+  --color-primary-500: #685dc5;
+  --color-primary-600: #4f469c;
+  --color-primary-800: #3e377a;
+
+  /* Define Neutral Colors */
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #e6e6e6;
+  --color-neutral-200: #c2c2c2;
+  --color-neutral-300: #a3a3a3;
+  --color-neutral-400: #c4c4c4;
+  --color-neutral-500: #535353;
+  --color-neutral-900: #333333;
+
+  /* Define Semantic Colors */
+  --color-green-50: #cac6eb;
+  --color-green-500: #5acf81;
+  --color-red-50: #f8dedd;
+  --color-red-500: #ec5857;
+  --color-yellow-50: #f8f6dd;
+  --color-yellow-500: #ec5857;
+}

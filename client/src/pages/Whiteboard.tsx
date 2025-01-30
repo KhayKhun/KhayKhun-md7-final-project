@@ -130,13 +130,12 @@ const Whiteboard = () => {
     }
   };
 
-  
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Whiteboard: {boardCode}</h2>
+    <div className="p-6 bg-neutral-50 min-h-screen flex flex-col items-center">
+      <h2 className="text-3xl font-bold text-primary-600 mb-4">Whiteboard: {boardCode}</h2>
       {whiteboard && (
-        <p className="mb-4">
-          Owner: {whiteboard.owner_id} | Created:{" "}
+        <p className="mb-4 text-neutral-500 text-sm">
+          Owner: {whiteboard.owner_id} | Created: {" "}
           {new Date(whiteboard.created_at).toLocaleString()}
         </p>
       )}
@@ -146,34 +145,36 @@ const Whiteboard = () => {
           type="color"
           value={selectedColor}
           onChange={(e) => setSelectedColor(e.target.value)}
-          className="w-10 h-10 cursor-pointer"
+          className="w-12 h-12 border rounded-lg cursor-pointer shadow-md"
         />
         <button
           onClick={addRectangle}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 shadow-md"
         >
           Add Rectangle
         </button>
       </div>
 
       {/* Canvas */}
-      <Stage width={600} height={500} className="border bg-white">
-        <Layer>
-          {shapes.map((shape) => (
-            <Rect
-              key={shape._id}
-              x={shape.data.x1}
-              y={shape.data.y1}
-              width={shape.data.x2 - shape.data.x1}
-              height={shape.data.y2 - shape.data.y1}
-              fill={shape.color}
-              draggable
-              shadowBlur={10}
-              onDragEnd={(e) => handleDragEnd(shape._id, e)}
-            />
-          ))}
-        </Layer>
-      </Stage>
+      <div className="border border-primary-500 bg-white rounded-lg shadow-lg p-4">
+        <Stage width={300} height={300} className="rounded-lg">
+          <Layer>
+            {shapes.map((shape) => (
+              <Rect
+                key={shape._id}
+                x={shape.data.x1}
+                y={shape.data.y1}
+                width={shape.data.x2 - shape.data.x1}
+                height={shape.data.y2 - shape.data.y1}
+                fill={shape.color}
+                draggable
+                shadowBlur={5}
+                onDragEnd={(e) => handleDragEnd(shape._id, e)}
+              />
+            ))}
+          </Layer>
+        </Stage>
+      </div>
     </div>
   );
 };
